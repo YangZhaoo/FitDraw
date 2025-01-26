@@ -42,5 +42,8 @@ class LoopSpeed:
         int(self._center[0] - text_width / 2), int(self._center[1] + text_height / 2)),
                    font, font_scale, self._font_color,
                    font_thickness)
-        return cv.bitwise_or(image, panel, )
+        _, image_mask = cv.threshold(panel, 127, 255, cv.THRESH_BINARY_INV)
+        return image_mask
+        # return cv.bitwise_and(image_mask, image)
+        # return cv.bitwise_or(image, panel, )
 
