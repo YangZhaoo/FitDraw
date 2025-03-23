@@ -3,10 +3,10 @@ from draw.speed_view import LoopSpeed
 
 
 if __name__ == '__main__':
-    img = cv.imread('../img/01.png')
+    img = cv.imread('./img/01.png')
 
-    loopView = LoopSpeed()
-    img = loopView.draw(30, img)
-    cv.imshow("img", img)
-
-    cv.waitKey(2000)
+    max_speed=40
+    loopView = LoopSpeed(max_speed=max_speed)
+    for i in range(max_speed):
+        cv.imshow("img", loopView.draw(i, img.copy()))
+        cv.waitKey(500)
