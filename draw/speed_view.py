@@ -1,10 +1,7 @@
 import cv2 as cv
 import numpy as np
 
-from draw.base import ViewBase
-
-
-class LoopSpeed(ViewBase):
+class LoopSpeed:
 
     def __init__(self, max_speed=60):
         super().__init__()
