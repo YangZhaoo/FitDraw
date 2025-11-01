@@ -60,6 +60,149 @@ def image_show(image):
     if cv.waitKey(0) & 0xFF == ord('q'):
         return
 
+def preview_video(input_video_path, records, fit_start_timestamp, time_offset=0):
+    """
+    预览模式：实时显示处理后的视频，无需等待导出
+    
+    参数:
+        input_video_path: 输入视频路径
+        records: FIT 记录列表
+        fit_start_timestamp: FIT 文件起始时间戳
+        time_offset: 时间偏移量（秒），用于调整视频和 FIT 数据的对齐
+    
+    键盘控制:
+        空格: 暂停/继续
+        q/ESC: 退出预览
+        d 或 右箭头: 快进10秒
+        a 或 左箭头: 后退10秒
+        s: 快进1秒
+        w: 后退1秒
+        ] 或 +: 时间偏移 +10 秒
+        [ 或 -: 时间偏移 -10 秒
+    """
+    print("\n=== 预览模式 ===")
+    print("控制键:")
+    print("  空格: 暂停/继续")
+    print("  q/ESC: 退出预览")
+    print("  d 或 右箭头: 快进10秒")
+    print("  a 或 左箭头: 后退10秒")
+    print("  s: 快进1秒")
+    print("  w: 后退1秒")
+    print("  ] 或 +: 时间偏移 +10 秒（调整数据对齐）")
+    print("  [ 或 -: 时间偏移 -10 秒（调整数据对齐）\n")
+    
+    # 创建速度绘制器
+    loopView = LoopSpeedV2(max_speed=60)
+    
+    # 从视频文件名解析视频开始时间
+    video_filename = os.path.basename(input_video_path)
+    video_start_timestamp = parse_video_start_time(video_filename)
+    
+    # 打开视频
+    cap = cv.VideoCapture(input_video_path)
+    fps = cap.get(cv.CAP_PROP_FPS)
+    total_frames = int(cap.get(cv.CAP_PROP_FRAME_COUNT))
+    
+    # 创建窗口
+    window_name = "预览 (按 q 退出)"
+    cv.namedWindow(window_name, cv.WINDOW_NORMAL)
+    
+    paused = False
+    frame_idx = 0
+
+    records_map = {record.timestamp: record for record in records}
+    
+    while True:
+        if not paused:
+            ret, frame = cap.read()
+            if not ret:
+                print("视频播放完毕")
+                break
+            
+            frame = cv.rotate(frame, cv.ROTATE_180)
+            
+            # 计算当前时间戳
+            current_time_in_video = frame_idx / fps
+            current_timestamp = video_start_timestamp + current_time_in_video
+            
+            # 查找对应的记录
+            # record_index = int(current_timestamp - fit_start_timestamp + time_offset)
+            # closest_record = records[record_index]
+            closest_record = records_map[int(current_timestamp - 275)]
+
+            # 绘制速度信息
+            frame_with_speed = loopView.draw(closest_record, frame)
+            
+            # 添加信息文本
+            info_text = f"Frame: {frame_idx}/{total_frames} | Speed: {closest_record.speed:.1f} km/h  | Time: {closest_record.date_time.astimezone()} | Offset: {time_offset}s"
+            cv.putText(frame_with_speed, info_text, (10, 30),
+                      cv.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+            
+            # 显示
+            cv.imshow(window_name, frame_with_speed)
+            frame_idx += 1
+        else:
+            # 暂停时只显示当前帧
+            cv.imshow(window_name, frame_with_speed)
+        
+        # 控制键盘输入（等待时间与帧率匹配）
+        wait_time = int(1000 / fps) if not paused else 100
+        key = cv.waitKey(wait_time)
+        
+        # 处理按键
+        if key == -1:  # 没有按键
+            continue
+        
+        # 对于ASCII字符，使用 & 0xFF
+        key_char = key & 0xFF
+        
+        if key_char == ord('q') or key_char == 27:  # q 或 ESC
+            print("退出预览")
+            break
+        elif key_char == ord(' '):  # 空格
+            paused = not paused
+            print("暂停" if paused else "继续")
+        elif key_char == ord('d') or key == 2555904 or key == 83 or key == 65363:  # d 或 右箭头
+            # 快进10秒
+            frame_idx = min(frame_idx + int(10 * fps), total_frames - 1)
+            cap.set(cv.CAP_PROP_POS_FRAMES, frame_idx)
+            print(f"快进到 {frame_idx / fps:.1f}s")
+        elif key_char == ord('a') or key == 2424832 or key == 81 or key == 65361:  # a 或 左箭头
+            # 后退10秒
+            frame_idx = max(frame_idx - int(10 * fps), 0)
+            cap.set(cv.CAP_PROP_POS_FRAMES, frame_idx)
+            print(f"后退到 {frame_idx / fps:.1f}s")
+        elif key_char == ord('s'):  # s 快进1秒
+            frame_idx = min(frame_idx + int(fps), total_frames - 1)
+            cap.set(cv.CAP_PROP_POS_FRAMES, frame_idx)
+            print(f"快进到 {frame_idx / fps:.1f}s")
+        elif key_char == ord('w'):  # w 后退1秒
+            frame_idx = max(frame_idx - int(fps), 0)
+            cap.set(cv.CAP_PROP_POS_FRAMES, frame_idx)
+            print(f"后退到 {frame_idx / fps:.1f}s")
+        elif key_char == ord(']'):  # ] 时间偏移 +1
+            time_offset += 10
+            print(f"时间偏移: {time_offset}s")
+        elif key_char == ord('['):  # [ 时间偏移 -1
+            time_offset -= 10
+            print(f"时间偏移: {time_offset}s")
+        elif key_char == ord('+') or key_char == ord('='):  # + 或 =
+            time_offset += 10
+            print(f"时间偏移: {time_offset}s")
+        elif key_char == ord('-') or key_char == ord('_'):  # - 或 _
+            time_offset -= 10
+            print(f"时间偏移: {time_offset}s")
+        else:
+            # 调试：打印未处理的按键码
+            if key_char != 255:  # 忽略无效键
+                print(f"未识别的按键 - 完整键码: {key}, 字符码: {key_char}")
+    
+    cap.release()
+    cv.destroyAllWindows()
+    
+    return time_offset
+
+
 if __name__ == '__main__':
     # 解析 FIT 文件
     fitParser = FitParser('./resource/20251001.fit')
@@ -74,13 +217,38 @@ if __name__ == '__main__':
     print(f"FIT 文件时间范围: {datetime.fromtimestamp(fit_start_timestamp)} ~ {datetime.fromtimestamp(fit_end_timestamp)}")
     print(f"总共 {len(records)} 条记录")
 
+    file_name = 'DJI_20251001132807_0130_D'
+    # 视频文件路径
+    input_video_path = f'./resource/{file_name}.MP4'
+    temp_video_path = f'./resource/{file_name}_speed_temp.mp4'
+    output_video_path = f'./resource/{file_name}_speed.mp4'
+    
+    # 选择模式
+    print("\n请选择模式:")
+    print("1. 预览模式 (快速查看效果，可调整参数)")
+    print("2. 导出模式 (生成最终视频文件)")
+    
+    mode = input("请输入 1 或 2 (默认为预览): ").strip()
+    
+    if mode == '2':
+        # 导出模式
+        time_offset_input = input("请输入时间偏移量(秒，默认 -372): ").strip()
+        time_offset = int(time_offset_input) if time_offset_input else -372
+    else:
+        # 预览模式
+        print("\n启动预览...")
+        time_offset = preview_video(input_video_path, records, fit_start_timestamp, time_offset=-698)
+        
+        # 预览后询问是否导出
+        export = input("\n预览完成，是否导出视频? (y/n): ").strip().lower()
+        if export != 'y':
+            print("取消导出")
+            exit(0)
+    
+    print(f"\n使用时间偏移: {time_offset}s")
+
     # 创建速度绘制器
     loopView = LoopSpeedV2(max_speed=60)  # 最大速度 60 km/h
-
-    # 视频文件路径
-    input_video_path = './resource/DJI_20251001123716_0119_D.MP4'
-    temp_video_path = './resource/DJI_20251001123716_0119_D_speed_temp.mp4'
-    output_video_path = './resource/DJI_20251001123716_0119_D_speed.mp4'
     
     # 从视频文件名解析视频开始时间
     video_filename = os.path.basename(input_video_path)
@@ -148,7 +316,10 @@ if __name__ == '__main__':
     frame_count = 0
     start_time = time.time()
     last_print_time = start_time
-    
+
+    records_map = {record.timestamp: record for record in records}
+
+
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -158,12 +329,15 @@ if __name__ == '__main__':
         # 计算当前帧的时间戳（秒）
         current_time_in_video = frame_count / fps
         
-        # 假设视频开始时间与 FIT 记录开始时间一致
+        # 计算当前帧对应的实际时间戳
         current_timestamp = video_start_timestamp + current_time_in_video
         
-        # 找到最接近的记录
-        closest_record = records[int(current_timestamp - fit_start_timestamp - 371)]
-        
+        # 找到最接近的记录（使用时间偏移）
+        # record_index = int(current_timestamp + time_offset - fit_start_timestamp)
+        # record_index = max(0, min(record_index, len(records) - 1))
+        # closest_record = records[record_index]
+        closest_record = records_map[int(current_timestamp - 275)]
+
         # 绘制速度信息
         frame_with_speed = loopView.draw(closest_record, frame)
         
