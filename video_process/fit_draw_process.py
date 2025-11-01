@@ -1,6 +1,6 @@
 from .stream_process import stream_process_template
 from tqdm import tqdm
-from draw.speed_view_v2 import LoopSpeedV2
+from draw import LoopSpeedV2, DebugInfoDraw
 from typing import List
 from parser import Record
 import cv2 as cv
@@ -18,11 +18,13 @@ class fit_draw_process(stream_process_template):
                        record_file_path)
         self._preview = preview
         self._preview_window_name = preview_window_name
+        self._time_offset = 275
 
     def _stream_process(self, records: List[Record]):
         # 逐帧处理
         frame_count = 0
         loopView = LoopSpeedV2(max_speed=60)
+        debugView = DebugInfoDraw()
 
         records_map = {record.timestamp: record for record in records}
         video_start_timestamp = get_video_file_start_timestamp(
@@ -39,10 +41,20 @@ class fit_draw_process(stream_process_template):
 
                 # 计算当前帧对应的实际时间戳
                 current_timestamp = video_start_timestamp + current_time_in_video
-                closest_record = records_map[int(current_timestamp - 275)]
+                current_record = records_map[int(current_timestamp - self._time_offset)]
 
                 # 绘制速度信息
-                frame_with_speed = loopView.draw(closest_record, frame)
+                frame_with_speed = loopView.draw(current_record, frame)
+                camera_info = {
+                    '\nvideo info': '',
+                    'frame': f'{frame_count}/{self._total_frames}',
+                    'fps': round(self._fps, 2),
+                    'current timestamp': round(current_timestamp, 2),
+                    'current frame time offset': round(current_time_in_video, 2),
+                    'camera & watch time offset': self._time_offset
+                }
+                # 绘制debug信息
+                frame_with_speed = debugView.draw(current_record, frame_with_speed, **camera_info)
 
                 # 显示进度
                 frame_count += 1
