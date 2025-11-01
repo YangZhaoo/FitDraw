@@ -2,33 +2,12 @@ import cv2 as cv
 from draw.speed_view_v2 import LoopSpeedV2
 from parser import FitParser
 import os
-import bisect
 import subprocess
 from datetime import datetime
 import re
 import time
-
-
-def find_closest_record(records, target_timestamp):
-    """根据时间戳找到最接近的记录"""
-    # 使用二分查找找到最接近的记录
-    timestamps = [r.timestamp for r in records]
-    idx = bisect.bisect_left(timestamps, target_timestamp)
-    
-    if idx == 0:
-        return records[0]
-    if idx == len(records):
-        return records[-1]
-    
-    # 比较前后两个记录，返回最接近的
-    before = records[idx - 1]
-    after = records[idx]
-    
-    if abs(before.timestamp - target_timestamp) < abs(after.timestamp - target_timestamp):
-        return before
-    else:
-        return after
-
+from util import extract_audio_to_video
+from tqdm import tqdm
 
 def convert_speed_to_kmh(speed_mps):
     """将速度从 m/s 转换为 km/h"""
@@ -53,12 +32,6 @@ def parse_video_start_time(video_filename):
     else:
         raise ValueError(f"无法从文件名中解析时间: {video_filename}")
 
-
-
-def image_show(image):
-    cv.imshow('demo', image)
-    if cv.waitKey(0) & 0xFF == ord('q'):
-        return
 
 def preview_video(input_video_path, records, fit_start_timestamp, time_offset=0):
     """
@@ -319,58 +292,38 @@ if __name__ == '__main__':
 
     records_map = {record.timestamp: record for record in records}
 
-
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        frame = cv.rotate(frame, cv.ROTATE_180)
-        # image_show(frame)
-        # 计算当前帧的时间戳（秒）
-        current_time_in_video = frame_count / fps
-        
-        # 计算当前帧对应的实际时间戳
-        current_timestamp = video_start_timestamp + current_time_in_video
-        
-        # 找到最接近的记录（使用时间偏移）
-        # record_index = int(current_timestamp + time_offset - fit_start_timestamp)
-        # record_index = max(0, min(record_index, len(records) - 1))
-        # closest_record = records[record_index]
-        closest_record = records_map[int(current_timestamp - 275)]
-
-        # 绘制速度信息
-        frame_with_speed = loopView.draw(closest_record, frame)
-        
-        # 写入输出视频
-        if use_ffmpeg:
-            # 使用 ffmpeg 管道写入
-            try:
-                ffmpeg_process.stdin.write(frame_with_speed.tobytes())
-            except BrokenPipeError:
-                print("❌ ffmpeg 管道断开")
+    with tqdm(total=total_frames, unit='frame') as pbar:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
                 break
-        else:
-            # 使用 OpenCV 写入
-            out.write(frame_with_speed)
-        
-        # 显示进度
-        frame_count += 1
-        current_time = time.time()
-        
-        # 每秒或每100帧更新一次进度
-        if frame_count % 100 == 0 or (current_time - last_print_time) >= 1.0:
-            elapsed = current_time - start_time
-            progress = (frame_count / total_frames) * 100
-            fps_processing = frame_count / elapsed if elapsed > 0 else 0
-            remaining_frames = total_frames - frame_count
-            eta_seconds = remaining_frames / fps_processing if fps_processing > 0 else 0
-            eta_minutes = int(eta_seconds / 60)
-            eta_seconds_rem = int(eta_seconds % 60)
-            
-            print(f"处理进度: {progress:.1f}% ({frame_count}/{total_frames}) | "
-                  f"速度: {fps_processing:.1f} fps | "
-                  f"预计剩余: {eta_minutes}:{eta_seconds_rem:02d}")
-            last_print_time = current_time
+            # 相机倒置拍摄，需要手动旋转180
+            frame = cv.rotate(frame, cv.ROTATE_180)
+            # 计算当前帧的时间戳（秒）
+            current_time_in_video = frame_count / fps
+
+            # 计算当前帧对应的实际时间戳
+            current_timestamp = video_start_timestamp + current_time_in_video
+            closest_record = records_map[int(current_timestamp - 275)]
+
+            # 绘制速度信息
+            frame_with_speed = loopView.draw(closest_record, frame)
+
+            # 写入输出视频
+            if use_ffmpeg:
+                # 使用 ffmpeg 管道写入
+                try:
+                    ffmpeg_process.stdin.write(frame_with_speed.tobytes())
+                except BrokenPipeError:
+                    print("❌ ffmpeg 管道断开")
+                    break
+            else:
+                # 使用 OpenCV 写入
+                out.write(frame_with_speed)
+
+            # 显示进度
+            frame_count += 1
+            pbar.update(1)
     
     # 释放资源
     cap.release()
@@ -399,51 +352,5 @@ if __name__ == '__main__':
     cv.destroyAllWindows()
     
     print("视频帧处理完成，正在合并音频...")
-    
-    # 使用 ffmpeg 将原视频的音频和其他流复制到新视频中
-    # -i temp_video_path: 输入处理后的视频（无音频）
-    # -i input_video_path: 输入原始视频（有音频）
-    # -map 0:v:0: 使用第一个输入的视频流（处理后的视频）
-    # -map 1:a?: 使用第二个输入的所有音频流（原视频的音频）
-    # -c:v copy: 复制视频流，不重新编码
-    # -c:a copy: 复制音频流，不重新编码
-    # -shortest: 以最短的流为准
-    
-    try:
-        # 删除已存在的输出文件
-        if os.path.exists(output_video_path):
-            os.remove(output_video_path)
-        
-        ffmpeg_cmd = [
-            'ffmpeg',
-            '-i', temp_video_path,  # 处理后的视频（无音频）
-            '-i', input_video_path,  # 原视频（有音频）
-            '-map', '0:v:0',  # 使用第一个输入的视频流
-            '-map', '1:a?',   # 使用第二个输入的音频流（如果存在）
-            '-c:v', 'copy',   # 复制视频流
-            '-c:a', 'copy',   # 复制音频流
-            '-shortest',      # 以最短流为准
-            '-y',             # 覆盖输出文件
-            output_video_path
-        ]
-        
-        result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
-        
-        if result.returncode == 0:
-            print(f"✓ 视频处理完成，输出文件: {output_video_path}")
-            # 删除临时文件
-            if os.path.exists(temp_video_path):
-                os.remove(temp_video_path)
-                print("✓ 临时文件已清理")
-        else:
-            print(f"❌ FFmpeg 合并失败: {result.stderr}")
-            print(f"临时视频文件保存在: {temp_video_path}")
-    
-    except FileNotFoundError:
-        print("❌ 未找到 ffmpeg，请确保已安装 ffmpeg")
-        print("   macOS: brew install ffmpeg")
-        print("   Ubuntu: sudo apt install ffmpeg")
-        print(f"临时视频文件（无音频）保存在: {temp_video_path}")
-    except Exception as e:
-        print(f"❌ 合并音频时出错: {e}")
-        print(f"临时视频文件保存在: {temp_video_path}")
+
+    extract_audio_to_video(output_video_path, temp_video_path, input_video_path)
