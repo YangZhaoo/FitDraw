@@ -6,8 +6,8 @@ from draw.base import ViewBase
 
 class LoopSpeedV2(ViewBase):
 
-    def __init__(self, max_speed=60):
-        super().__init__()
+    def __init__(self, max_speed=60, next_view=None):
+        super().__init__(next_view)
         self._width = 400
         self._height = 400
         self._outer_radius = int(self._height / 2)
@@ -101,7 +101,7 @@ class LoopSpeedV2(ViewBase):
         self._cache[speed] = (panel, mask_3ch)
         return panel, mask_3ch
 
-    def draw(self, record, image):
+    def _draw(self, record, image, **kargs):
         speed = record.speed
         if not self._prepared:
             self._prepare_data(image)

@@ -1,6 +1,6 @@
 from .stream_process import stream_process_template
 from tqdm import tqdm
-from draw import LoopSpeedV2, DebugInfoDraw
+from draw import LoopSpeedV2, DebugInfoDraw, TextView, ViewBase
 from typing import List
 from parser import Record
 import cv2 as cv
@@ -12,13 +12,21 @@ from datetime import datetime
 class fit_draw_process(stream_process_template):
 
     def __init__(self, input_video_path, output_video_path, temp_video_path,
-        record_file_path, preview: bool = False,
-        preview_window_name: str = '预览'):
+                 record_file_path, preview: bool = False,
+                 preview_window_name: str = '预览'):
         super().__init__(input_video_path, output_video_path, temp_video_path,
-                       record_file_path)
+                         record_file_path)
         self._preview = preview
         self._preview_window_name = preview_window_name
         self._time_offset = 275
+
+        work_steps = [DebugInfoDraw(), TextView(), LoopSpeedV2(60), None]
+        self._work_flow = self._construct_work_flow(work_steps)
+
+    def _construct_work_flow(self, step: List[ViewBase]) -> ViewBase:
+        for i in range(len(step) - 1):
+            step[i].next_view = step[i + 1]
+        return step[0]
 
     def _stream_process(self, records: List[Record]):
         # 逐帧处理
@@ -43,11 +51,12 @@ class fit_draw_process(stream_process_template):
                 current_timestamp = video_start_timestamp + current_time_in_video
                 record_key = int(current_timestamp - self._time_offset)
                 current_record = records_map[record_key]
-                extract_speed = current_record.speed + (records_map[record_key + 1].speed - current_record.speed) * (frame_count % int(self._fps) / int(self._fps))
+                extract_speed = current_record.speed + (records_map[record_key + 1].speed - current_record.speed) * (
+                            frame_count % int(self._fps) / int(self._fps))
                 current_record.speed = round(extract_speed, 2)
 
                 # 绘制速度信息
-                frame_with_speed = loopView.draw(current_record, frame)
+                # frame_with_speed = loopView.draw(current_record, frame)
                 camera_info = {
                     '\nvideo info': '',
                     'frame': f'{frame_count}/{self._total_frames}',
@@ -56,21 +65,23 @@ class fit_draw_process(stream_process_template):
                     'current frame time offset': round(current_time_in_video, 2),
                     'camera & watch time offset': self._time_offset
                 }
-                # 绘制debug信息
-                frame_with_speed_debug = debugView.draw(current_record, frame_with_speed, **camera_info)
+                # # 绘制debug信息
+                # frame_with_speed_debug = debugView.draw(current_record, frame_with_speed, **camera_info)
+
+                final_frame = self._work_flow.do_draw(current_record, frame, **camera_info)
 
                 # 显示进度
                 frame_count += 1
                 pbar.update(1)
 
                 if self._preview:
-                    cv.imshow(self._preview_window_name, frame_with_speed_debug)
+                    cv.imshow(self._preview_window_name, final_frame)
                     wait_time = int(1000 / self._fps)
                     _ = cv.waitKey(wait_time)
                     continue
 
                 try:
-                    self._ffmpeg_process.stdin.write(frame_with_speed.tobytes())
+                    self._ffmpeg_process.stdin.write(final_frame.tobytes())
                 except BrokenPipeError:
                     print("❌ ffmpeg 管道断开")
                     break
