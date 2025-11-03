@@ -54,14 +54,14 @@ class fit_draw_process(stream_process_template):
                     'camera & watch time offset': self._time_offset
                 }
                 # 绘制debug信息
-                frame_with_speed = debugView.draw(current_record, frame_with_speed, **camera_info)
+                frame_with_speed_debug = debugView.draw(current_record, frame_with_speed, **camera_info)
 
                 # 显示进度
                 frame_count += 1
                 pbar.update(1)
 
                 if self._preview:
-                    cv.imshow(self._preview_window_name, frame_with_speed)
+                    cv.imshow(self._preview_window_name, frame_with_speed_debug)
                     wait_time = int(1000 / self._fps)
                     _ = cv.waitKey(wait_time)
                     continue
