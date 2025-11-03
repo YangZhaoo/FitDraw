@@ -8,10 +8,10 @@ class LoopSpeedV2(ViewBase):
 
     def __init__(self, max_speed=60):
         super().__init__()
-        self._width = 200
-        self._height = 200
+        self._width = 400
+        self._height = 400
         self._outer_radius = int(self._height / 2)
-        self._inner_radius = int(self._outer_radius * 0.85)
+        self._inner_radius = int(self._outer_radius * 0.75)
         self._min_speed = 0
         self._max_speed = max_speed
         self._speed_unit = 'Km/h'
@@ -22,18 +22,18 @@ class LoopSpeedV2(ViewBase):
 
         # 速度
         self._font = cv.FONT_HERSHEY_SIMPLEX
-        self._speed_font_scale = 1.5
-        self._speed_font_thickness = 2
+        self._speed_font_scale = 2.5
+        self._speed_font_thickness = 3
         self._speed_font_color = (255, 255, 255)
 
         # 单位
-        self._unit_font_scale = 1
-        self._unit_font_thickness = 1
-        self._unit_font_color = (27, 52, 206)
+        self._unit_font_scale = 1.5
+        self._unit_font_thickness = 2
+        self._unit_font_color = (27, 52, 255)
 
         # 位置参数
-        self._x_rate = 0.1
-        self._y_rate = 0.85
+        self._x_rate = 0.15
+        self._y_rate = 0.80
         self._center = None # 使用center_x、center_y来代替
         self._cache = {}
 

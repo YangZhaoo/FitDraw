@@ -15,5 +15,5 @@ if __name__ == '__main__':
     output_video_path = os.path.join(resource_path, f'{file_name}_speed.MP4')
     fit_file_path = os.path.join(resource_path, f'20251001.fit')
 
-    process = fit_draw_process(input_video_path, output_video_path, temp_video_path, fit_file_path, preview=False)
+    process = fit_draw_process(input_video_path, output_video_path, temp_video_path, fit_file_path, preview=True)
     process.do_process()

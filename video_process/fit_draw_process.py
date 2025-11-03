@@ -35,13 +35,16 @@ class fit_draw_process(stream_process_template):
                 if not ret:
                     break
                 # 相机倒置拍摄，需要手动旋转180
-                frame = cv.rotate(frame, cv.ROTATE_180)
+                # frame = cv.rotate(frame, cv.ROTATE_180)
                 # 计算当前帧的时间戳（秒）
                 current_time_in_video = frame_count / self._fps
 
                 # 计算当前帧对应的实际时间戳
                 current_timestamp = video_start_timestamp + current_time_in_video
-                current_record = records_map[int(current_timestamp - self._time_offset)]
+                record_key = int(current_timestamp - self._time_offset)
+                current_record = records_map[record_key]
+                extract_speed = current_record.speed + (records_map[record_key + 1].speed - current_record.speed) * (frame_count % int(self._fps) / int(self._fps))
+                current_record.speed = round(extract_speed, 2)
 
                 # 绘制速度信息
                 frame_with_speed = loopView.draw(current_record, frame)
