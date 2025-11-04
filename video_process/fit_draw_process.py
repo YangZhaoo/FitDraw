@@ -1,6 +1,6 @@
-from .stream_process import stream_process_template
+from .stream_process import StreamProcessTemplate
 from tqdm import tqdm
-from draw import LoopSpeedV2, DebugInfoDraw, TextView, ViewBase
+from draw import LoopSpeedV2, DebugInfoDraw, TextView, ViewBase, FrameBlend
 from typing import List
 from parser import Record
 import cv2 as cv
@@ -9,9 +9,9 @@ from parser import FitParser
 from datetime import datetime
 
 
-class fit_draw_process(stream_process_template):
+class FitDrawProcess(StreamProcessTemplate):
 
-    def __init__(self, input_video_path, output_video_path, temp_video_path,
+    def __init__(self, work_steps: List[ViewBase], input_video_path, output_video_path, temp_video_path,
                  record_file_path, preview: bool = False,
                  preview_window_name: str = '预览'):
         super().__init__(input_video_path, output_video_path, temp_video_path,
@@ -19,8 +19,6 @@ class fit_draw_process(stream_process_template):
         self._preview = preview
         self._preview_window_name = preview_window_name
         self._time_offset = 275
-
-        work_steps = [DebugInfoDraw(), TextView(), LoopSpeedV2(60), None]
         self._work_flow = self._construct_work_flow(work_steps)
 
     def _construct_work_flow(self, step: List[ViewBase]) -> ViewBase:
@@ -31,8 +29,6 @@ class fit_draw_process(stream_process_template):
     def _stream_process(self, records: List[Record]):
         # 逐帧处理
         frame_count = 0
-        loopView = LoopSpeedV2(max_speed=60)
-        debugView = DebugInfoDraw()
 
         records_map = {record.timestamp: record for record in records}
         video_start_timestamp = get_video_file_start_timestamp(
@@ -65,8 +61,6 @@ class fit_draw_process(stream_process_template):
                     'current frame time offset': round(current_time_in_video, 2),
                     'camera & watch time offset': self._time_offset
                 }
-                # # 绘制debug信息
-                # frame_with_speed_debug = debugView.draw(current_record, frame_with_speed, **camera_info)
 
                 final_frame = self._work_flow.do_draw(current_record, frame, **camera_info)
 

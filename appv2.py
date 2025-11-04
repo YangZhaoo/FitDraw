@@ -1,5 +1,6 @@
-from video_process import fit_draw_process
+from video_process import FitDrawProcess
 import os
+from draw import *
 
 if __name__ == '__main__':
 
@@ -14,6 +15,7 @@ if __name__ == '__main__':
     temp_video_path = os.path.join(resource_path, f'{file_name}_speed_temp.MP4')
     output_video_path = os.path.join(resource_path, f'{file_name}_speed.MP4')
     fit_file_path = os.path.join(resource_path, f'20251001.fit')
+    work_steps = [FrameBlend(), DebugInfoDraw(), TextView(), LoopSpeedV2(60), None]
 
-    process = fit_draw_process(input_video_path, output_video_path, temp_video_path, fit_file_path, preview=True)
+    process = FitDrawProcess(work_steps, input_video_path, output_video_path, temp_video_path, fit_file_path, preview=False)
     process.do_process()

@@ -1,5 +1,5 @@
-from .fit_draw_process import fit_draw_process
+from .fit_draw_process import FitDrawProcess
 
 __all__ = [
-    'fit_draw_process'
+    'FitDrawProcess'
 ]

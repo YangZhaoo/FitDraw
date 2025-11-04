@@ -6,7 +6,7 @@ from parser import Record
 from typing import List
 
 
-class stream_process_template(ABC):
+class StreamProcessTemplate(ABC):
 
     def __init__(self, input_video_path, output_video_path, temp_video_path, record_file_path):
         self._input_video_path = input_video_path
