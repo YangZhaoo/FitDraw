@@ -1,6 +1,6 @@
 from .stream_process import StreamProcessTemplate
 from tqdm import tqdm
-from draw import LoopSpeedV2, DebugInfoDraw, TextView, ViewBase, FrameBlend
+from draw import ViewBase
 from typing import List
 from parser import Record
 import cv2 as cv
@@ -12,13 +12,13 @@ from datetime import datetime
 class FitDrawProcess(StreamProcessTemplate):
 
     def __init__(self, work_steps: List[ViewBase], input_video_path, output_video_path, temp_video_path,
-                 record_file_path, preview: bool = False,
+                 record_file_path, preview: bool = False, time_offset: int = 275,
                  preview_window_name: str = '预览'):
         super().__init__(input_video_path, output_video_path, temp_video_path,
                          record_file_path)
         self._preview = preview
         self._preview_window_name = preview_window_name
-        self._time_offset = 275
+        self._time_offset = time_offset
         self._work_flow = self._construct_work_flow(work_steps)
 
     def _construct_work_flow(self, step: List[ViewBase]) -> ViewBase:

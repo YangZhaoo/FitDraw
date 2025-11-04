@@ -5,14 +5,16 @@ import numpy as np
 
 
 class FrameBlend(ViewBase):
-    def __init__(self, n_weights=[0.5, 0.25, 0.15, 0.1], next_view=None):
+    def __init__(self, n_weights=[0.5, 0.25, 0.15, 0.1], skip: bool = False, next_view=None):
         super().__init__(next_view)
         self._n_weight = n_weights
         self._n_frames = len(self._n_weight)
         self._frame_queue = deque(maxlen=len(n_weights))
-
+        self._skip = skip
 
     def _draw(self, record: Record, image, **kargs):
+        if self._skip:
+            return image
         self._frame_queue.append(image.copy())
         if len(self._frame_queue) == self._n_frames:
             # 创建混合帧（初始为全黑）
