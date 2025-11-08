@@ -38,10 +38,10 @@ class TextView(ViewBase):
 
         # 时间配置
         self._font = cv.FONT_HERSHEY_SIMPLEX
-        self._time_font_scale = 2.0
+        self._time_font_scale = 1.5
         self._time_font_thickness = 3
         self._time_font_color = (255, 255, 255)
-        self._time_psition_rate = 0.01
+        self._time_position_rate = 0.01
         self._x = None
         self._y = None
 
@@ -60,7 +60,7 @@ class TextView(ViewBase):
 
         (time_char_width, time_char_height), _ = cv.getTextSize('0', self._font, self._time_font_scale,
                                                                 self._time_font_thickness)
-        time_position_offset = min(h, w) * self._time_psition_rate
+        time_position_offset = min(h, w) * self._time_position_rate
         self._time_x, self._time_y = int(time_position_offset), int(time_position_offset + time_char_height)
 
         (location_char_width, location_char_height), _ = cv.getTextSize(location, self._font, self._location_font_scale,
