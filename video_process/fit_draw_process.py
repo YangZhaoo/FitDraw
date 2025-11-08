@@ -59,7 +59,8 @@ class FitDrawProcess(StreamProcessTemplate):
                     'fps': round(self._fps, 2),
                     'current timestamp': round(current_timestamp, 2),
                     'current frame time offset': round(current_time_in_video, 2),
-                    'camera & watch time offset': self._time_offset
+                    'camera & watch time offset': self._time_offset,
+                    'records': records
                 }
 
                 final_frame = self._work_flow.do_draw(current_record, frame, **camera_info)
