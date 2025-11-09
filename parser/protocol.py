@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import numpy as np
 from pydantic import BaseModel, field_validator
 from typing import Optional
 from datetime import datetime
@@ -20,6 +22,9 @@ class Location(BaseModel):
         if delta_longitude == 0:
             return 90.0 if delta_latitude > 0 else -90.0  # 正北或正南
         return math.degrees(math.atan2(delta_latitude, delta_longitude))
+
+    def getNpArray(self):
+        return np.array([self.longitude, self.latitude])
 
     def __str__(self):
         return f"{self.longitude}, {self.latitude}"

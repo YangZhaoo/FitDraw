@@ -18,7 +18,7 @@ if __name__ == '__main__':
     work_steps = [
         # FrameBlend(skip=True),
         GlobalMap(),
-        DebugInfoDraw(),
+        # DebugInfoDraw(),
         TextView(),
         LoopSpeedV2(60),
         None
