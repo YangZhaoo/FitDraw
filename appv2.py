@@ -9,7 +9,7 @@ if __name__ == '__main__':
     # 构建resource目录的绝对路径
     resource_path = os.path.join(current_dir, 'resource')
 
-    file_name = 'DJI_20251001132807_0130_D'
+    file_name = 'DJI_20251001125113_0121_D'
     # 视频文件路径
     input_video_path = os.path.join(resource_path, f'{file_name}.MP4')
     temp_video_path = os.path.join(resource_path, f'{file_name}_speed_temp.MP4')
@@ -21,9 +21,9 @@ if __name__ == '__main__':
         DirectView(),
         TextView(),
         LoopSpeedV2(60),
-        DebugInfoDraw(True),
+        # DebugInfoDraw(True),
         None
     ]
 
-    process = FitDrawProcess(work_steps, input_video_path, output_video_path, temp_video_path, fit_file_path, preview=True)
+    process = FitDrawProcess(work_steps, input_video_path, output_video_path, temp_video_path, fit_file_path, preview=False, time_offset=0)
     process.do_process()

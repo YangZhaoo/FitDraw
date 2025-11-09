@@ -14,7 +14,7 @@ class GlobalMap(ViewBase):
         self._map_size = 800
         self._map_edge_rate = 0.1
         self._map_track_color = (255, 255, 255)
-        self._map_track_thickness = 8
+        self._map_track_thickness = 10
         self._current_sign_radius = 13
         self._current_sign_color = (0, 0, 255)
 
