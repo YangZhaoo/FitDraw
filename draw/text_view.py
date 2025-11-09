@@ -15,8 +15,7 @@ class DebugInfoDraw(ViewBase):
 
     def _draw(self, record: Record, image, **kargs):
         # 添加信息文本
-        image_text = str.join('\n', [f"{key}: {value}" for key, value in kargs.items()]) if kargs is not None and len(
-            kargs) > 0 else ""
+        image_text = str.join('\n', [f"{key}: {value}" for key, value in kargs['debug_info'].items()]) if kargs is not None and 'debug_info' in kargs else ""
         info_text = str(record) + image_text
         height_start_idx = int(image.shape[0] * 0.3)
 

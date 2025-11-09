@@ -15,8 +15,14 @@ if __name__ == '__main__':
     temp_video_path = os.path.join(resource_path, f'{file_name}_speed_temp.MP4')
     output_video_path = os.path.join(resource_path, f'{file_name}_speed.MP4')
     fit_file_path = os.path.join(resource_path, f'20251001.fit')
-    work_steps = [DebugInfoDraw(), TextView(), LoopSpeedV2(60), None]
-    # work_steps = [FrameBlend(skip=True), GlobalMap(), DebugInfoDraw(), TextView(), LoopSpeedV2(60), None]
+    work_steps = [
+        # FrameBlend(skip=True),
+        GlobalMap(),
+        DebugInfoDraw(),
+        TextView(),
+        LoopSpeedV2(60),
+        None
+    ]
 
     process = FitDrawProcess(work_steps, input_video_path, output_video_path, temp_video_path, fit_file_path, preview=True)
     process.do_process()

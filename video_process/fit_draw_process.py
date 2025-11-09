@@ -53,17 +53,19 @@ class FitDrawProcess(StreamProcessTemplate):
 
                 # 绘制速度信息
                 # frame_with_speed = loopView.draw(current_record, frame)
-                camera_info = {
-                    '\nvideo info': '',
-                    'frame': f'{frame_count}/{self._total_frames}',
-                    'fps': round(self._fps, 2),
-                    'current timestamp': round(current_timestamp, 2),
-                    'current frame time offset': round(current_time_in_video, 2),
-                    'camera & watch time offset': self._time_offset,
+                session_attribute = {
+                    'debug_info': {
+                        '\nvideo info': '',
+                        'frame': f'{frame_count}/{self._total_frames}',
+                        'fps': round(self._fps, 2),
+                        'current timestamp': round(current_timestamp, 2),
+                        'current frame time offset': round(current_time_in_video, 2),
+                        'camera & watch time offset': self._time_offset
+                    },
                     'records': records
                 }
 
-                final_frame = self._work_flow.do_draw(current_record, frame, **camera_info)
+                final_frame = self._work_flow.do_draw(current_record, frame, **session_attribute)
 
                 # 显示进度
                 frame_count += 1

@@ -40,16 +40,12 @@ class GlobalMap(ViewBase):
         cv.polylines(self._map, [draw_pos], isClosed=False, color=(255, 255, 255), thickness=5)
 
     def _draw(self, record: Record, image, **kargs):
+        if not self._prepared:
+            self._prepare(image, kargs['records'])
+            self._prepared = True
+        image = np.where(self._map > 0, self._map, image)
+        if record.location is None:
+            return image
+        current_point = self._convert_position(record.location)[0] +  + np.array([self._image_w - self._map_size, self._map_edge_size])
+        cv.circle(image, current_point, 10, (0, 255, 0), lineType=cv.LINE_AA, thickness=-1)
         return image
-        # if not self._prepared:
-        #     self._prepare(image, kargs['records'])
-        #     self._prepared = True
-        #
-        # # roi = image[0:self._map_size, self._image_w - self._map_size:, :]
-        #
-        # image = np.where(self._map > 0, self._map, image)
-        # if record.location is None:
-        #     return image
-        # current_point = self._convert_position(record.location)[0] +  + np.array([self._image_w - self._map_size, self._map_edge_size])
-        # cv.circle(image, current_point, 10, (0, 255, 0), lineType=cv.LINE_AA, thickness=-1)
-        # return image
