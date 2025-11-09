@@ -8,9 +8,12 @@ class LoopSpeedV2(ViewBase):
 
     def __init__(self, max_speed=60, next_view=None):
         super().__init__(next_view)
-        self._width = 400
-        self._height = 400
-        self._outer_radius = int(self._height / 2)
+        self._panel_box_out_size = 600
+        self._panel_box_edge_rate = 0.05
+
+        self._panel_box_edge = int(self._panel_box_out_size * self._panel_box_edge_rate)
+        self._panel_box_inner_size = int(self._panel_box_out_size * (1 - self._panel_box_edge_rate * 2))
+        self._outer_radius = int(self._panel_box_inner_size / 2)
         self._inner_radius = int(self._outer_radius * 0.75)
         self._min_speed = 0
         self._max_speed = max_speed
@@ -18,7 +21,6 @@ class LoopSpeedV2(ViewBase):
         self._min_angle = -210
         self._max_angle = 30
         self._loop_color = (245, 179, 38)
-
 
         # 速度
         self._font = cv.FONT_HERSHEY_SIMPLEX
@@ -32,35 +34,34 @@ class LoopSpeedV2(ViewBase):
         self._unit_font_color = (27, 52, 255)
 
         # 位置参数
-        self._x_rate = 0.15
-        self._y_rate = 0.80
-        self._center = None # 使用center_x、center_y来代替
+        self._panel_box_position = None
+        self._center = np.array([int(self._panel_box_out_size / 2), int(self._panel_box_out_size / 2)])
         self._cache = {}
-
         self._prepared = False
 
     def _prepare_data(self, image):
-        image_height, image_width = image.shape[:2]
-        self._panel_template = np.zeros_like(image, dtype=np.uint8)
-        self._center = (int(image_width * 0.1), int(image_height * 0.85))
-        (self._speed_char_width, self._speed_char_height), _ = cv.getTextSize("0",
-                                                                  self._font,
-                                                                  self._speed_font_scale,
-                                                                  self._speed_font_thickness)
+        self._image_h, self._image_w = image.shape[:2]
+        (self._speed_char_width, self._speed_char_height), _ = cv.getTextSize(
+            "0",
+            self._font,
+            self._speed_font_scale,
+            self._speed_font_thickness)
 
-        (self._unit_width, self._unit_height), _ = cv.getTextSize(self._speed_unit,
-                                                                  self._font,
-                                                                  self._unit_font_scale,
-                                                                  self._unit_font_thickness)
+        (self._unit_width, self._unit_height), _ = cv.getTextSize(
+            self._speed_unit,
+            self._font,
+            self._unit_font_scale,
+            self._unit_font_thickness)
 
+        # 位置坐标：左下角
+        self._panel_box_position = np.array([100, self._image_h - self._panel_box_out_size - 100])
         self._prepared = True
-
 
     def _get_speed_mask(self, speed):
         if speed in self._cache:
             return self._cache[speed]
         text = "--" if speed == 0 else str(speed)
-        panel = self._panel_template.copy()
+        panel = np.zeros((self._panel_box_out_size, self._panel_box_out_size, 3), dtype=np.uint8)
         start_angle = self._min_angle
         end_angle = self._get_end_angle(speed)
 
@@ -68,10 +69,8 @@ class LoopSpeedV2(ViewBase):
         cv.ellipse(panel, self._center,
                    (self._outer_radius, self._outer_radius), 0, start_angle,
                    end_angle, self._loop_color, -1, lineType=cv.LINE_AA)
-        # super().image_show(panel)
         cv.circle(panel, self._center, self._inner_radius, (0, 0, 0), -1,
                   lineType=cv.LINE_AA)
-        # super().image_show(panel)
 
         # 绘制速度数字，坐标位置，左下角。
         cv.putText(panel, text, (
@@ -79,51 +78,42 @@ class LoopSpeedV2(ViewBase):
             int(self._center[1] + self._speed_char_height / 2)),
                    self._font, self._speed_font_scale, self._speed_font_color,
                    self._speed_font_thickness)
-        # super().image_show(panel)
 
         # 绘制单位，坐标位置，左下角。
         cv.putText(panel, self._speed_unit, (
             int(self._center[0] - self._unit_width / 2),
-            int(self._center[1] + self._speed_char_height / 2 + self._unit_height * 1.5)),
+            int(self._center[
+                    1] + self._speed_char_height / 2 + self._unit_height * 1.5)),
                    self._font, self._unit_font_scale, self._unit_font_color,
                    self._unit_font_thickness)
-        # super().image_show(panel)
 
-        # 创建掩码：找出 panel 中非黑色的区域
-        gray_panel = cv.cvtColor(panel, cv.COLOR_BGR2GRAY)
-        # super().image_show(gray_panel)
-        _, mask = cv.threshold(gray_panel, 1, 255, cv.THRESH_BINARY)
-        # super().image_show(mask)
-
-
-        # 将 mask 转换为3通道
-        mask_3ch = cv.cvtColor(mask, cv.COLOR_GRAY2BGR)
-        self._cache[speed] = (panel, mask_3ch)
-        return panel, mask_3ch
+        panel_mask = np.any(panel > 0, axis=2)
+        self._cache[speed] = (panel, panel_mask)
+        return panel, panel_mask
 
     def _draw(self, record, image, **kargs):
         speed = record.speed
         if not self._prepared:
             self._prepare_data(image)
 
-        result = image.copy()
-        # 创建一个临时画布用于绘制速度仪表盘
+        panel, panel_mask = self._get_speed_mask(speed)
+        image_roi = image[self._panel_box_position[1]: self._panel_box_position[1] + self._panel_box_out_size,
+                    self._panel_box_position[0]: self._panel_box_position[0] + self._panel_box_out_size,
+                    :]
+        image_roi[panel_mask] = panel[panel_mask]
 
-        # super().image_show(panel)
-
-
-        # super().image_show(mask_3ch)
-
-        panel, mask_3ch = self._get_speed_mask(speed)
-
-    # 使用 np.where 直接在结果图像上叠加速度仪表盘
-        # 这样可以避免复杂的位运算，保持原图像不变
-        result = np.where(mask_3ch > 0, panel, result)
-        # super().image_show(result)
-        return result
+        # cv.rectangle(image, self._panel_box_position + np.array([self._panel_box_edge, self._panel_box_edge]),
+        #              self._panel_box_position + np.array([self._panel_box_edge, self._panel_box_edge]) + np.array(
+        #                  [self._panel_box_inner_size, self._panel_box_inner_size]),
+        #              (0, 0, 255), thickness=1)
+        # cv.rectangle(image, self._panel_box_position,
+        #              self._panel_box_position + np.array(
+        #                  [self._panel_box_out_size, self._panel_box_out_size]),
+        #              (0, 255, 0), thickness=1)
+        return image
 
     def _get_end_angle(self, speed):
         angle = (speed - self._min_speed) / (
             self._max_speed - self._min_speed) * (
-            self._max_angle - self._min_angle)
+                    self._max_angle - self._min_angle)
         return max(angle, 1) + self._min_angle
