@@ -61,7 +61,7 @@ class GlobalMap(ViewBase):
 
     def _draw(self, record: Record, image, **kargs):
         if not self._prepared:
-            self._prepare_data(image, kargs['records'])
+            self._prepare_data(image, kargs['record_info']['records'])
             self._prepared = True
         image_roi = image[self._map_out_delta_position[1]:self._map_out_delta_position[1]+self._map_size,
                     self._map_out_delta_position[0]:self._map_out_delta_position[0] + self._map_size,

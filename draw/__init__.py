@@ -4,6 +4,7 @@ from .debug_view import DebugInfoDraw
 from .base import ViewBase
 from .vision_process import FrameBlend
 from .map_view import GlobalMap
+from .direct_view import DirectView
 
 
 __all__ = [
@@ -11,6 +12,7 @@ __all__ = [
     'GlobalMap',
     'DebugInfoDraw',
     'TextView',
+    'DirectView',
     'ViewBase',
     'FrameBlend'
 ]
