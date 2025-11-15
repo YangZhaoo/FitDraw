@@ -29,7 +29,7 @@ class LoopSpeedV2(ViewBase):
         self._speed_font_color = (255, 255, 255)
 
         # 单位
-        self._unit_font_scale = 1.5
+        self._unit_font_scale = 1.8
         self._unit_font_thickness = 2
         self._unit_font_color = (27, 52, 255)
 
@@ -60,7 +60,7 @@ class LoopSpeedV2(ViewBase):
     def _get_speed_mask(self, speed):
         if speed in self._cache:
             return self._cache[speed]
-        text = "--" if speed == 0 else str(speed)
+        text = "--" if speed == 0 else f'{speed:.2f}'
         panel = np.zeros((self._panel_box_out_size, self._panel_box_out_size, 3), dtype=np.uint8)
         start_angle = self._min_angle
         end_angle = self._get_end_angle(speed)
@@ -102,15 +102,17 @@ class LoopSpeedV2(ViewBase):
                     :]
         image_roi[panel_mask] = panel[panel_mask]
 
-        # cv.rectangle(image, self._panel_box_position + np.array([self._panel_box_edge, self._panel_box_edge]),
-        #              self._panel_box_position + np.array([self._panel_box_edge, self._panel_box_edge]) + np.array(
-        #                  [self._panel_box_inner_size, self._panel_box_inner_size]),
-        #              (0, 0, 255), thickness=1)
-        # cv.rectangle(image, self._panel_box_position,
-        #              self._panel_box_position + np.array(
-        #                  [self._panel_box_out_size, self._panel_box_out_size]),
-        #              (0, 255, 0), thickness=1)
         return image
+
+    def _draw_box(self, image):
+        cv.rectangle(image, self._panel_box_position + np.array([self._panel_box_edge, self._panel_box_edge]),
+                     self._panel_box_position + np.array([self._panel_box_edge, self._panel_box_edge]) + np.array(
+                         [self._panel_box_inner_size, self._panel_box_inner_size]),
+                     (0, 0, 255), thickness=1)
+        cv.rectangle(image, self._panel_box_position,
+                     self._panel_box_position + np.array(
+                         [self._panel_box_out_size, self._panel_box_out_size]),
+                     (0, 255, 0), thickness=1)
 
     def _get_end_angle(self, speed):
         angle = (speed - self._min_speed) / (

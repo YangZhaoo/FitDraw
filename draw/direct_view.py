@@ -11,9 +11,9 @@ class DirectView(ViewBase):
     def __init__(self):
 
         # 可以修改
-        self._direct_out_size = 200
+        self._direct_out_size = 300
         self._direct_edge_rate = 0.3
-        self._direct_fill_color = (200, 200, 200)
+        self._direct_fill_color = (230, 230, 230)
         self._center = (
         int(self._direct_out_size / 2), int(self._direct_out_size / 2))
 
@@ -90,14 +90,14 @@ class DirectView(ViewBase):
                                                        0] + self._direct_out_size,
                     :]
         image_roi[direct_mask] = direct_sign[direct_mask]
-
-        # cv.rectangle(image, self._direct_sign_position + np.array([self._direct_edge_size, self._direct_edge_size]),
-        #              self._direct_sign_position + np.array([self._direct_edge_size, self._direct_edge_size]) + np.array(
-        #                  [self._direct_inner_size, self._direct_inner_size]),
-        #              (0, 0, 255), thickness=1)
-        # cv.rectangle(image, self._direct_sign_position,
-        #              self._direct_sign_position + np.array(
-        #                  [self._direct_out_size, self._direct_out_size]),
-        #              (0, 255, 0), thickness=1)
-
         return image
+
+    def _draw_box(self, image):
+        cv.rectangle(image, self._direct_sign_position + np.array([self._direct_edge_size, self._direct_edge_size]),
+                     self._direct_sign_position + np.array([self._direct_edge_size, self._direct_edge_size]) + np.array(
+                         [self._direct_inner_size, self._direct_inner_size]),
+                     (0, 0, 255), thickness=1)
+        cv.rectangle(image, self._direct_sign_position,
+                     self._direct_sign_position + np.array(
+                         [self._direct_out_size, self._direct_out_size]),
+                     (0, 255, 0), thickness=1)

@@ -68,7 +68,7 @@ class FitDrawProcess(StreamProcessTemplate):
                     }
                 }
 
-                final_frame = self._work_flow.do_draw(current_record, frame, **session_attribute)
+                final_frame = self._work_flow.do_draw(current_record, frame, self._preview, **session_attribute)
 
                 # 显示进度
                 frame_count += 1

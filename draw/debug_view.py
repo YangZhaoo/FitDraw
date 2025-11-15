@@ -31,7 +31,10 @@ class DebugInfoDraw(ViewBase):
                 image = cv.putText(image, text,
                                                    (20, height_start_idx + int(idx * h * self._line_row_multiply_factor)),
                                                    self._font, self._font_scale, self._color, self._thickness)
+        return image
 
+
+    def _draw_box(self, image):
         w, h = image.shape[:2]
         # 绘制图片引导线：中线（绿色）、对角线（红色）
         cv.line(image, [int(h / 2), 0], [int(h / 2), w], (0, 255, 0), thickness=self._aux_line_thickness)
@@ -39,5 +42,3 @@ class DebugInfoDraw(ViewBase):
 
         cv.line(image, [0, 0], [h, w], (0, 0, 255), thickness=self._aux_line_thickness)
         cv.line(image, [0, w], [h, 0], (0, 0, 255), thickness=self._aux_line_thickness)
-        return image
-

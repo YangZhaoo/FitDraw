@@ -21,9 +21,9 @@ if __name__ == '__main__':
         DirectView(),
         TextView(),
         LoopSpeedV2(60),
-        # DebugInfoDraw(True),
+        DebugInfoDraw(True),
         None
     ]
 
-    process = FitDrawProcess(work_steps, input_video_path, output_video_path, temp_video_path, fit_file_path, preview=False, time_offset=0)
+    process = FitDrawProcess(work_steps, input_video_path, output_video_path, temp_video_path, fit_file_path, preview=True)
     process.do_process()
