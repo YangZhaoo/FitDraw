@@ -12,10 +12,9 @@ import time
 
 class FitDrawProcess(StreamProcessTemplate):
 
-    def __init__(self, work_steps: List[ViewBase], input_video_path, record_file_path, preview: bool = False, draw_box: bool = False, time_offset: int = 275,
+    def __init__(self, work_steps: List[ViewBase], input_video_path, record_file_path, output_video_path=None, preview: bool = False, draw_box: bool = False, time_offset: int = 275,
                  preview_window_name: str = '预览'):
-        super().__init__(input_video_path, record_file_path)
-        self._preview = preview
+        super().__init__(input_video_path, record_file_path, output_video_path, preview)
         self._draw_box = draw_box
         self._preview_window_name = preview_window_name
         self._time_offset = time_offset
@@ -96,7 +95,7 @@ class FitDrawProcess(StreamProcessTemplate):
 
                 if self._preview:
                     cv.imshow(self._preview_window_name, final_frame)
-                    wait_time = int(1000 / self._fps)
+                    wait_time = int(1000 / self._fps / 2)
                     _ = cv.waitKey(wait_time)
                     continue
 

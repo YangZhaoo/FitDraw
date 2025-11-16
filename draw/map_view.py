@@ -134,7 +134,6 @@ class GlobalMap(ViewBase):
         if not self._geo_prepared:
             self._prepare_geo(record, **kargs)
 
-        global_info = kargs['global_info']
         image_roi = image[self._map_out_delta_position[1]:
                           self._map_out_delta_position[1] + self._map_size,
                     self._map_out_delta_position[0]:
@@ -142,12 +141,11 @@ class GlobalMap(ViewBase):
                     :]
         image_roi[self._map_mask] = self._map[self._map_mask]
 
-        current_location = record.location
-
-        if current_location is not None:
+        global_info = kargs['global_info']
+        current_location = global_info.get('last_geo', None)
+        if record.location is not None:
+            current_location = record.location
             global_info['last_geo'] = current_location
-        else:
-            current_location = global_info['last_geo']
 
         if current_location is not None:
             current_point = \
@@ -157,11 +155,10 @@ class GlobalMap(ViewBase):
                       self._current_sign_color, lineType=cv.LINE_AA,
                       thickness=-1)
 
-        distance = record.distance
-        if distance is not None:
-            global_info['last_distance'] = distance
-        else:
-            distance = global_info['last_distance']
+        distance = global_info.get('last_distance', None)
+        if record.distance is not None:
+            global_info['last_distance'] = record.distance
+            distance = record.distance
 
         if distance is not None:
             cv.putText(image, f"{distance:.2f}m",

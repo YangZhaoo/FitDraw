@@ -74,12 +74,13 @@ class DirectView(ViewBase):
             self._prepare_data(image)
             self._prepared = True
 
+        global_info = kargs['global_info']
         recent_record: List[Record] = kargs['record_info']['recent_record']
         if recent_record is not None and recent_record[0] is not None and recent_record[-1] is not None:
             angle = recent_record[0].location.getAngle(recent_record[-1].location)
-            kargs['global_info']['last_angle'] = angle
+            global_info['last_angle'] = angle
         else:
-            angle = kargs['global_info']['last_angle'] if kargs['global_info']['last_angle'] is not None else self._init_angle
+            angle = global_info.get('last_angle', self._init_angle)
 
         kargs['frame']['current_angle'] = angle
 

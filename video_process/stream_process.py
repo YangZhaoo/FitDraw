@@ -10,13 +10,20 @@ from pathlib import Path
 
 class StreamProcessTemplate(ABC):
 
-    def __init__(self, input_video_path, record_file_path):
+    def __init__(self, input_video_path, record_file_path, output_video_path, preview: bool = False):
         self._input_video_path = input_video_path
         parent_path = Path(input_video_path).parent
         file_name, file_format = Path(input_video_path).name.split('.')
-        self._output_video_path = os.path.join(parent_path, f"{file_name}_speed.{file_format}")
-        self._temp_video_path = os.path.join(parent_path, f"{file_name}_speed_temp.{file_format}")
         self._record_file_path = record_file_path
+        if output_video_path is not None:
+            self._output_video_path = os.path.join(Path(output_video_path, f"{file_name}_speed.{file_format}"))
+            self._temp_video_path = os.path.join(Path(self._output_video_path).parent, f"{file_name}_speed_temp.{file_format}")
+        else:
+            self._output_video_path = os.path.join(parent_path, f"{file_name}_speed.{file_format}")
+            self._temp_video_path = os.path.join(parent_path, f"{file_name}_speed_temp.{file_format}")
+        if os.path.exists(self._temp_video_path):
+            os.remove(self._temp_video_path)
+        self._preview = preview
 
     def do_process(self):
 
@@ -50,40 +57,44 @@ class StreamProcessTemplate(ABC):
             self._temp_video_path
         ]
 
-        print("启动 ffmpeg 编码器...")
-        try:
-            self._ffmpeg_process = subprocess.Popen(
-                ffmpeg_cmd,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                bufsize=10 ** 8
-            )
-        except FileNotFoundError:
-            print("❌ 未找到 ffmpeg，将使用 OpenCV 编码器（文件会较大）")
-            print("   建议安装 ffmpeg: brew install ffmpeg")
-            fourcc = cv.VideoWriter_fourcc(*'mp4v')
-            self._ffmpeg_process = None
+        if not self._preview:
+            print("启动 ffmpeg 编码器...")
+            try:
+                self._ffmpeg_process = subprocess.Popen(
+                    ffmpeg_cmd,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    bufsize=10 ** 8
+                )
+            except FileNotFoundError:
+                print("❌ 未找到 ffmpeg，将使用 OpenCV 编码器（文件会较大）")
+                print("   建议安装 ffmpeg: brew install ffmpeg")
+                fourcc = cv.VideoWriter_fourcc(*'mp4v')
+                self._ffmpeg_process = None
 
         records = self._get_records(self._record_file_path)
         self._stream_process(records)
 
         # 释放资源
         self._cap.release()
-        # 关闭 ffmpeg 管道
-        self._ffmpeg_process.stdin.close()
-        self._ffmpeg_process.wait()
+        if not self._preview:
+            # 关闭 ffmpeg 管道
+            self._ffmpeg_process.stdin.close()
+            self._ffmpeg_process.wait()
 
-        # 检查 ffmpeg 是否成功
-        if self._ffmpeg_process.returncode != 0:
-            stderr_output = self._ffmpeg_process.stderr.read().decode('utf-8')
-            print(f"❌ ffmpeg 编码失败: {stderr_output}")
-            exit(1)
+            # 检查 ffmpeg 是否成功
+            if self._ffmpeg_process.returncode != 0:
+                stderr_output = self._ffmpeg_process.stderr.read().decode('utf-8')
+                print(f"❌ ffmpeg 编码失败: {stderr_output}")
+                exit(1)
 
         cv.destroyAllWindows()
         print("视频帧处理完成，正在合并音频...")
-        extract_audio_to_video(self._output_video_path, self._temp_video_path,
-                               self._input_video_path)
+
+        if not self._preview:
+            extract_audio_to_video(self._output_video_path, self._temp_video_path,
+                                   self._input_video_path)
 
     @abstractmethod
     def _stream_process(self, records: List[Record]):
