@@ -78,7 +78,8 @@ class GlobalMap(ViewBase):
         cv.polylines(self._map, [draw_pos], isClosed=False,
                      color=self._map_track_color,
                      thickness=self._map_track_thickness)
-        self._map_mask = np.any(self._map > 0, axis=2)
+        self._map_with_geo = self._map
+        self._map_mask = np.any(self._map_with_geo > 0, axis=2)
 
     def _get_regeo_info(self, location):
         gaode = GaoDe()
@@ -120,10 +121,10 @@ class GlobalMap(ViewBase):
         else:
             pass
         if geo_info is not None:
-            self._map = self._cv2_add_chinese_text(self._map, geo_info.getSimpleInfo(),
+            self._map_with_geo = self._cv2_add_chinese_text(self._map.copy(), geo_info.getSimpleInfo(),
                                        self._geo_position,
                                        50, (255, 255, 255))
-            self._map_mask = np.any(self._map > 0, axis=2)
+            self._map_mask = np.any(self._map_with_geo > 0, axis=2)
             self._geo_prepared = True
 
     def _draw(self, record: Record, image, **kargs):
@@ -139,7 +140,7 @@ class GlobalMap(ViewBase):
                     self._map_out_delta_position[0]:
                     self._map_out_delta_position[0] + self._map_size,
                     :]
-        image_roi[self._map_mask] = self._map[self._map_mask]
+        image_roi[self._map_mask] = self._map_with_geo[self._map_mask]
 
         global_info = kargs['global_info']
         current_location = global_info.get('last_geo', None)
@@ -178,3 +179,7 @@ class GlobalMap(ViewBase):
                      self._map_out_delta_position + np.array(
                          [self._map_size, self._map_size]),
                      (0, 255, 0), thickness=1)
+
+    def clean_session_status(self):
+        self._geo_prepared = False
+

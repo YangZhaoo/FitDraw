@@ -21,7 +21,8 @@ if __name__ == '__main__':
     complete_process_video = set([file.replace('_speed', '') for file in os.listdir(output_video_dir) if file.endswith(".MP4")])
     need_process_video = all_process_video - complete_process_video
 
-    video_files = [file for file in need_process_video if file.find('20251001125113') > 0]
+    # video_files = [file for file in need_process_video if file.find('20251001125113') > 0]
+    video_files = need_process_video
     count = len(video_files)
     for i, video_file in enumerate(video_files):
         print(f"\n\n{i + 1}/{count}: [{video_file}]\n")
@@ -35,3 +36,6 @@ if __name__ == '__main__':
         }
         process = FitDrawProcess(**args_param)
         process.do_process()
+        for step in work_steps:
+            if step is not None:
+                step.clean_session_status()

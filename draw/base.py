@@ -23,3 +23,6 @@ class ViewBase(ABC):
     @abstractmethod
     def _draw_box(self, image):
         pass
+
+    def clean_session_status(self):
+        pass
