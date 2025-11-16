@@ -21,9 +21,12 @@ class GlobalMap(ViewBase):
         self._current_sign_color = (0, 0, 255)
 
         self._font = cv.FONT_HERSHEY_SIMPLEX
-        self._distance_font_scale = 1.5
+        self._distance_font_scale = 1.8
         self._distance_font_thickness = 3
         self._distance_font_color = (255, 255, 255)
+
+        self._geo_font_scale = 60
+        self._geo_font_color = (255, 255, 255)
 
         (_, distance_char_height), _ = cv.getTextSize('0', self._font,
                                                       self._distance_font_scale,
@@ -41,7 +44,7 @@ class GlobalMap(ViewBase):
         self._map_inner_delta_position = np.array(
             [self._map_edge_size, self._map_edge_size])
         self._distance_position = self._map_inner_delta_position + np.array(
-            [int(self._map_box_inner_size / 2), 0])
+            [int(self._map_box_inner_size * 0.4), 0])
         self._geo_position = self._map_inner_delta_position + np.array(
             [0, int(self._map_box_inner_size * 0.8)])
         self._map_out_delta_position = None
@@ -122,8 +125,7 @@ class GlobalMap(ViewBase):
             pass
         if geo_info is not None:
             self._map_with_geo = self._cv2_add_chinese_text(self._map.copy(), geo_info.getSimpleInfo(),
-                                       self._geo_position,
-                                       50, (255, 255, 255))
+                                       self._geo_position, self._geo_font_scale, self._geo_font_color)
             self._map_mask = np.any(self._map_with_geo > 0, axis=2)
             self._geo_prepared = True
 
@@ -162,7 +164,7 @@ class GlobalMap(ViewBase):
             distance = record.distance
 
         if distance is not None:
-            cv.putText(image, f"{distance:.2f}m",
+            cv.putText(image, f"{distance:.2f} m",
                        self._distance_position,
                        self._font, self._distance_font_scale,
                        self._distance_font_color, self._distance_font_thickness)

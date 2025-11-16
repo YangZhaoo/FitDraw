@@ -15,7 +15,10 @@ class GeoInfo(BaseModel):
     street: str
 
     def getSimpleInfo(self):
-        return f"{self.province}{self.city}{self.district}"
+        if self.street is not None and len(self.street) > 0:
+            return f"{self.district}{self.street}"
+        else:
+            return f"{self.province}{self.city}{self.district}"
 
     def __str__(self):
         return f"{self.province}{self.city}{self.district}{self.township}{self.street}"
