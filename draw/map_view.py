@@ -43,7 +43,7 @@ class GlobalMap(ViewBase):
         self._distance_position = self._map_inner_delta_position + np.array(
             [int(self._map_box_inner_size / 2), 0])
         self._geo_position = self._map_inner_delta_position + np.array(
-            [0, self._map_box_inner_size])
+            [0, int(self._map_box_inner_size * 0.8)])
         self._map_out_delta_position = None
         self._min_log_lat = None
         self._max_log_lat = None

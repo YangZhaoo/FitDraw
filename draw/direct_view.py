@@ -14,7 +14,7 @@ class DirectView(ViewBase):
         # 可以修改
         self._direct_out_size = 300
         self._direct_edge_rate = 0.3
-        self._direct_fill_color = (230, 230, 230)
+        self._direct_fill_color = (240, 240, 240)
         self._center = (
         int(self._direct_out_size / 2), int(self._direct_out_size / 2))
 
