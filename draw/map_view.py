@@ -31,6 +31,7 @@ class GlobalMap(ViewBase):
 
         # 不可修改
         self._prepared = False
+        self._geo_prepared = False
         self._map_edge_size = int(self._map_size * self._map_edge_rate)
         self._map_box_inner_size = int(self._map_size * (
             1 - self._map_edge_rate * 2))
@@ -41,7 +42,8 @@ class GlobalMap(ViewBase):
             [self._map_edge_size, self._map_edge_size])
         self._distance_position = self._map_inner_delta_position + np.array(
             [int(self._map_box_inner_size / 2), 0])
-        self._geo_position = self._map_inner_delta_position + np.array([0, self._map_box_inner_size])
+        self._geo_position = self._map_inner_delta_position + np.array(
+            [0, self._map_box_inner_size])
         self._map_out_delta_position = None
         self._min_log_lat = None
         self._max_log_lat = None
@@ -65,7 +67,6 @@ class GlobalMap(ViewBase):
         self._map_out_delta_position = np.array(
             [self._image_w - self._map_size - 100, 100])
         self._distance_position += self._map_out_delta_position
-        self._geo_position += self._map_out_delta_position
         positions = np.asarray(
             [record.location.getNpArray() for record in records if
              record.location is not None])
@@ -83,7 +84,6 @@ class GlobalMap(ViewBase):
         gaode = GaoDe()
         return gaode.regeo(location)
 
-
     def _cv2_add_chinese_text(self, img, text, position, font_size, color):
         """
         在图像上添加中文文本
@@ -95,9 +95,11 @@ class GlobalMap(ViewBase):
         # 加载中文字体
         try:
             # font = ImageFont.truetype("/System/Library/Fonts/PingFang.ttc", font_size)  # 黑体
-            font = ImageFont.truetype("/System/Library/Fonts/Arial Unicode.ttf", font_size)  # 黑体
+            font = ImageFont.truetype("/System/Library/Fonts/Arial Unicode.ttf",
+                                      font_size)  # 黑体
         except:
-            font = ImageFont.truetype("/System/Library/Fonts/Arial Unicode.ttf", font_size)  # Mac
+            font = ImageFont.truetype("/System/Library/Fonts/Arial Unicode.ttf",
+                                      font_size)  # Mac
             # 或者使用其他中文字体路径
 
         # 绘制文本
@@ -107,11 +109,7 @@ class GlobalMap(ViewBase):
         img = cv.cvtColor(np.array(img_pil), cv.COLOR_RGB2BGR)
         return img
 
-    def _draw(self, record: Record, image, **kargs):
-        if not self._prepared:
-            self._prepare_data(image, kargs['global_info']['records'])
-            self._prepared = True
-
+    def _prepare_geo(self, record: Record, **kargs):
         global_info = kargs['global_info']
         geo_info = None
         if 'geo_info' in global_info:
@@ -121,6 +119,22 @@ class GlobalMap(ViewBase):
             global_info['geo_info'] = geo_info
         else:
             pass
+        if geo_info is not None:
+            self._map = self._cv2_add_chinese_text(self._map, geo_info.getSimpleInfo(),
+                                       self._geo_position,
+                                       50, (255, 255, 255))
+            self._map_mask = np.any(self._map > 0, axis=2)
+            self._geo_prepared = True
+
+    def _draw(self, record: Record, image, **kargs):
+        if not self._prepared:
+            self._prepare_data(image, kargs['global_info']['records'])
+            self._prepared = True
+
+        if not self._geo_prepared:
+            self._prepare_geo(record, **kargs)
+
+        global_info = kargs['global_info']
         image_roi = image[self._map_out_delta_position[1]:
                           self._map_out_delta_position[1] + self._map_size,
                     self._map_out_delta_position[0]:
@@ -136,8 +150,9 @@ class GlobalMap(ViewBase):
             current_location = global_info['last_geo']
 
         if current_location is not None:
-            current_point = self._convert_position(current_location.getNpArray())[
-                                0] + self._map_out_delta_position
+            current_point = \
+            self._convert_position(current_location.getNpArray())[
+                0] + self._map_out_delta_position
             cv.circle(image, current_point, self._current_sign_radius,
                       self._current_sign_color, lineType=cv.LINE_AA,
                       thickness=-1)
@@ -153,10 +168,6 @@ class GlobalMap(ViewBase):
                        self._distance_position,
                        self._font, self._distance_font_scale,
                        self._distance_font_color, self._distance_font_thickness)
-
-        if geo_info is not None:
-            image = self._cv2_add_chinese_text(image, geo_info.getSimpleInfo(), self._geo_position,
-                       50, (255, 255, 255))
 
         return image
 
