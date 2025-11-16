@@ -1,10 +1,24 @@
 from __future__ import annotations
 
 import numpy as np
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 import math
+
+
+class GeoInfo(BaseModel):
+    province: str
+    city: str
+    district: str
+    township: str
+    street: str
+
+    def getSimpleInfo(self):
+        return f"{self.province}{self.city}{self.district}"
+
+    def __str__(self):
+        return f"{self.province}{self.city}{self.district}{self.township}{self.street}"
 
 
 class Location(BaseModel):
@@ -27,7 +41,7 @@ class Location(BaseModel):
         return np.array([self.longitude, self.latitude])
 
     def __str__(self):
-        return f"{self.longitude}, {self.latitude}"
+        return f"{self.longitude:.6f}, {self.latitude:.6f}"
 
 
 class Record(BaseModel):

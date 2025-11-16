@@ -7,16 +7,16 @@ import cv2 as cv
 from util import get_video_file_start_timestamp
 from parser import FitParser
 from datetime import datetime
+import time
 
 
 class FitDrawProcess(StreamProcessTemplate):
 
-    def __init__(self, work_steps: List[ViewBase], input_video_path, output_video_path, temp_video_path,
-                 record_file_path, preview: bool = False, time_offset: int = 275,
+    def __init__(self, work_steps: List[ViewBase], input_video_path, record_file_path, preview: bool = False, draw_box: bool = False, time_offset: int = 275,
                  preview_window_name: str = '预览'):
-        super().__init__(input_video_path, output_video_path, temp_video_path,
-                         record_file_path)
+        super().__init__(input_video_path, record_file_path)
         self._preview = preview
+        self._draw_box = draw_box
         self._preview_window_name = preview_window_name
         self._time_offset = time_offset
         self._work_flow = self._construct_work_flow(work_steps)
@@ -33,6 +33,18 @@ class FitDrawProcess(StreamProcessTemplate):
         records_map = {record.timestamp: record for record in records}
         video_start_timestamp = get_video_file_start_timestamp(
             self._input_video_path)
+        global_info = {
+            'records': records
+            # 'geo_info': GeoInfo(province='北京市', city='',district='朝阳',township='八里庄',street='四环东路')
+        }
+        default_record = Record(**{
+            'timestamp': int(time.time()),
+            'date_time': datetime.now(),
+            'speed': None,
+            'location': None,
+            'distance': None
+        })
+
         with tqdm(total=self._total_frames, unit='frame') as pbar:
             while True:
                 ret, frame = self._cap.read()
@@ -46,29 +58,37 @@ class FitDrawProcess(StreamProcessTemplate):
                 # 计算当前帧对应的实际时间戳
                 current_timestamp = video_start_timestamp + current_time_in_video
                 record_key = int(current_timestamp - self._time_offset)
-                current_record = records_map[record_key]
-                extract_speed = current_record.speed + ((records_map[record_key + 1].speed - current_record.speed) * (
-                            frame_count % int(self._fps) / int(self._fps))) if (record_key + 1) in records_map else 0
-                current_record.speed = round(extract_speed, 2)
-
+                current_record = records_map.get(record_key, None)
+                if current_record is not None:
+                    extract_speed = current_record.speed + ((records_map[record_key + 1].speed - current_record.speed) * (
+                        (frame_count % int(self._fps)) / int(self._fps))) if (record_key + 1) in records_map else 0
+                    current_record.speed = round(extract_speed, 2)
+                else:
+                    default_record.timestamp = record_key
+                    default_record.date_time = datetime.fromtimestamp(record_key)
+                    current_record = default_record
                 # 绘制速度信息
                 # frame_with_speed = loopView.draw(current_record, frame)
-                session_attribute = {
-                    'debug_info': {
+                attribute = {
+                    'frame': {
                         '\nvideo info': '',
                         'frame': f'{frame_count}/{self._total_frames}',
                         'fps': round(self._fps, 2),
                         'current timestamp': round(current_timestamp, 2),
                         'current frame time offset': round(current_time_in_video, 2),
-                        'camera & watch time offset': self._time_offset
+                        'camera & recorder time diff': self._time_offset
                     },
                     'record_info': {
-                        'records': records,
-                        'recent_record': records_map.get(record_key - 3, None)
-                    }
+                        'recent_record': [
+                            records_map.get(record_key - 1, None),
+                            records_map.get(record_key, None),
+                            records_map.get(record_key + 1, None),
+                        ]
+                    },
+                    'global_info': global_info
                 }
 
-                final_frame = self._work_flow.do_draw(current_record, frame, self._preview, **session_attribute)
+                final_frame = self._work_flow.do_draw(current_record, frame, self._draw_box, **attribute)
 
                 # 显示进度
                 frame_count += 1

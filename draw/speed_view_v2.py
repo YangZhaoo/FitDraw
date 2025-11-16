@@ -29,8 +29,8 @@ class LoopSpeedV2(ViewBase):
         self._speed_font_color = (255, 255, 255)
 
         # 单位
-        self._unit_font_scale = 1.8
-        self._unit_font_thickness = 2
+        self._unit_font_scale = 2
+        self._unit_font_thickness = 3
         self._unit_font_color = (27, 52, 255)
 
         # 位置参数
@@ -54,7 +54,7 @@ class LoopSpeedV2(ViewBase):
             self._unit_font_thickness)
 
         # 位置坐标：左下角
-        self._panel_box_position = np.array([100, self._image_h - self._panel_box_out_size - 100])
+        self._panel_box_position = np.array([200, self._image_h - self._panel_box_out_size - 100])
         self._prepared = True
 
     def _get_speed_mask(self, speed):
@@ -92,10 +92,10 @@ class LoopSpeedV2(ViewBase):
         return panel, panel_mask
 
     def _draw(self, record, image, **kargs):
-        speed = record.speed
         if not self._prepared:
             self._prepare_data(image)
 
+        speed = record.speed if record.speed is not None else 0
         panel, panel_mask = self._get_speed_mask(speed)
         image_roi = image[self._panel_box_position[1]: self._panel_box_position[1] + self._panel_box_out_size,
                     self._panel_box_position[0]: self._panel_box_position[0] + self._panel_box_out_size,

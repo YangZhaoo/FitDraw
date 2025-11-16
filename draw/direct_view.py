@@ -1,4 +1,5 @@
 from collections import deque
+from typing import List
 
 from parser import Record
 from .base import ViewBase
@@ -73,13 +74,14 @@ class DirectView(ViewBase):
             self._prepare_data(image)
             self._prepared = True
 
-        recent_record: Record = kargs['record_info']['recent_record']
-        if recent_record is not None and recent_record.location is not None:
-            angle = recent_record.location.getAngle(record.location)
+        recent_record: List[Record] = kargs['record_info']['recent_record']
+        if recent_record is not None and recent_record[0] is not None and recent_record[-1] is not None:
+            angle = recent_record[0].location.getAngle(recent_record[-1].location)
+            kargs['global_info']['last_angle'] = angle
         else:
-            angle = self._init_angle
+            angle = kargs['global_info']['last_angle'] if kargs['global_info']['last_angle'] is not None else self._init_angle
 
-        kargs['debug_info']['current_angle'] = angle
+        kargs['frame']['current_angle'] = angle
 
         direct_sign, direct_mask = self._get_direct_and_mask(angle)
 

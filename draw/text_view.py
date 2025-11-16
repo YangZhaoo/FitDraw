@@ -53,8 +53,9 @@ class TextView(ViewBase):
         cv.putText(image, image_text, (self._time_x, self._time_y),
                    self._font, self._time_font_scale, self._time_font_color, self._time_font_thickness)
 
-        cv.putText(image, str(record.location), (self._location_x, self._location_y),
-                   self._font, self._location_font_scale, self._location_font_color, self._location_font_thickness)
+        if record.location is not None:
+            cv.putText(image, str(record.location), (self._location_x, self._location_y),
+                       self._font, self._location_font_scale, self._location_font_color, self._location_font_thickness)
 
         return image
 

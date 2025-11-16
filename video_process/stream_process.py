@@ -4,14 +4,18 @@ from util import extract_audio_to_video
 import subprocess
 from parser import Record
 from typing import List
+import os
+from pathlib import Path
 
 
 class StreamProcessTemplate(ABC):
 
-    def __init__(self, input_video_path, output_video_path, temp_video_path, record_file_path):
+    def __init__(self, input_video_path, record_file_path):
         self._input_video_path = input_video_path
-        self._output_video_path = output_video_path
-        self._temp_video_path = temp_video_path
+        parent_path = Path(input_video_path).parent
+        file_name, file_format = Path(input_video_path).name.split('.')
+        self._output_video_path = os.path.join(parent_path, f"{file_name}_speed.{file_format}")
+        self._temp_video_path = os.path.join(parent_path, f"{file_name}_speed_temp.{file_format}")
         self._record_file_path = record_file_path
 
     def do_process(self):

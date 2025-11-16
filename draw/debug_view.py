@@ -18,7 +18,7 @@ class DebugInfoDraw(ViewBase):
     def _draw(self, record: Record, image, **kargs):
         if self._enable_frame_info:
             # 添加信息文本，方便对齐image和record
-            image_text = str.join('\n', [f"{key}: {value}" for key, value in kargs['debug_info'].items()]) if kargs is not None and 'debug_info' in kargs else ""
+            image_text = str.join('\n', [f"{key}: {value}" for key, value in kargs['frame'].items()]) if kargs is not None and 'frame' in kargs else ""
             info_text = str(record) + image_text
             height_start_idx = int(image.shape[0] * 0.3)
 
