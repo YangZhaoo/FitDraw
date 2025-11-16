@@ -36,8 +36,7 @@ class StreamProcessTemplate(ABC):
         height = int(self._cap.get(cv.CAP_PROP_FRAME_HEIGHT))
         self._total_frames = int(self._cap.get(cv.CAP_PROP_FRAME_COUNT))
 
-        print(
-            f"视频信息: {width}x{height}, {self._fps} FPS, 总帧数: {self._total_frames}")
+        print(f"视频信息: {width}x{height}, {self._fps} FPS, 总帧数: {self._total_frames}")
 
         ffmpeg_cmd = [
             'ffmpeg',

@@ -116,7 +116,5 @@ class FitDrawProcess(StreamProcessTemplate):
 
         fit_start_timestamp = records[0].timestamp
         fit_end_timestamp = records[-1].timestamp
-        print(
-            f"FIT 文件时间范围: {datetime.fromtimestamp(fit_start_timestamp)} ~ {datetime.fromtimestamp(fit_end_timestamp)}")
-        print(f"总共 {len(records)} 条记录")
+        print(f"FIT 文件时间范围: {datetime.fromtimestamp(fit_start_timestamp)} ~ {datetime.fromtimestamp(fit_end_timestamp)} 总共 {len(records)} 条记录")
         return records
