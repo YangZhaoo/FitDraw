@@ -31,8 +31,8 @@ if __name__ == '__main__':
             'input_video_path': os.path.join(input_video_dir, video_file),
             'output_video_path': output_video_dir,
             'record_file_path': fit_file,
-            'preview': True,
-            'draw_box': True
+            'preview': False,
+            'draw_box': False
         }
         process = FitDrawProcess(**args_param)
         process.do_process()

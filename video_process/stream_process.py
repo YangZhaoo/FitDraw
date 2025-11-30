@@ -16,6 +16,8 @@ class StreamProcessTemplate(ABC):
         file_name, file_format = Path(input_video_path).name.split('.')
         self._record_file_path = record_file_path
         if output_video_path is not None:
+            if not os.path.exists(output_video_path):
+                os.mkdir(output_video_path)
             self._output_video_path = os.path.join(Path(output_video_path, f"{file_name}_speed.{file_format}"))
             self._temp_video_path = os.path.join(Path(self._output_video_path).parent, f"{file_name}_speed_temp.{file_format}")
         else:
